@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <defs>
+    <linearGradient id="bg" x1="64" y1="48" x2="448" y2="464" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#F8FAFC"/>
+      <stop offset="0.45" stop-color="#CBD5E1"/>
+      <stop offset="1" stop-color="#64748B"/>
+    </linearGradient>
+    <linearGradient id="mark" x1="156" y1="126" x2="370" y2="386" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#0F172A"/>
+      <stop offset="1" stop-color="#334155"/>
+    </linearGradient>
+    <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%" color-interpolation-filters="sRGB">
+      <feDropShadow dx="0" dy="18" stdDeviation="22" flood-color="#020617" flood-opacity="0.22"/>
+    </filter>
+  </defs>
+  <rect width="512" height="512" rx="116" fill="#020617"/>
+  <rect x="40" y="40" width="432" height="432" rx="96" fill="url(#bg)" filter="url(#shadow)"/>
+  <path d="M159 353V159h92c42 0 72 27 72 65 0 39-30 66-72 66h-37v63h-55Zm55-108h31c15 0 25-8 25-21 0-12-10-20-25-20h-31v41Zm123 108V159h53v194h-53Z" fill="url(#mark)"/>
+  <path d="M154 382h204" stroke="#0F172A" stroke-width="18" stroke-linecap="round" opacity="0.86"/>
+  <path d="M371 382h13" stroke="#0F172A" stroke-width="18" stroke-linecap="round" opacity="0.86"/>
+</svg>

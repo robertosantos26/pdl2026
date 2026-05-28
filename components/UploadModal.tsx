@@ -1,25 +1,117 @@
 
 "use client";
 
-import { useState } from "react";
-import { supabase } from "@/lib/supabase";
+import { ChangeEvent, useState } from "react";
+import { isSupabaseConfigured, supabase } from "@/lib/supabase";
+
+const MAX_IMAGE_WIDTH = 1600;
+const MAX_IMAGE_HEIGHT = 1600;
+const IMAGE_QUALITY = 0.72;
+
+function getCompressedDimensions(width: number, height: number) {
+  const scale = Math.min(MAX_IMAGE_WIDTH / width, MAX_IMAGE_HEIGHT / height, 1);
+
+  return {
+    width: Math.round(width * scale),
+    height: Math.round(height * scale),
+  };
+}
+
+function blobToFile(blob: Blob, originalName: string) {
+  const cleanName = originalName.replace(/\.[^/.]+$/, "");
+
+  return new File([blob], `${cleanName}.webp`, {
+    type: "image/webp",
+    lastModified: Date.now(),
+  });
+}
+
+async function compressImage(file: File) {
+  if (!file.type.startsWith("image/")) {
+    return file;
+  }
+
+  const imageUrl = URL.createObjectURL(file);
+  const image = new Image();
+
+  try {
+    await new Promise<void>((resolve, reject) => {
+      image.onload = () => resolve();
+      image.onerror = () => reject(new Error("Não foi possível carregar a imagem para compressão."));
+      image.src = imageUrl;
+    });
+
+    const { width, height } = getCompressedDimensions(image.width, image.height);
+    const canvas = document.createElement("canvas");
+    canvas.width = width;
+    canvas.height = height;
+
+    const context = canvas.getContext("2d");
+
+    if (!context) {
+      return file;
+    }
+
+    context.drawImage(image, 0, 0, width, height);
+
+    const compressedBlob = await new Promise<Blob | null>((resolve) => {
+      canvas.toBlob(resolve, "image/webp", IMAGE_QUALITY);
+    });
+
+    if (!compressedBlob || compressedBlob.size >= file.size) {
+      return file;
+    }
+
+    return blobToFile(compressedBlob, file.name);
+  } finally {
+    URL.revokeObjectURL(imageUrl);
+  }
+}
+
+function formatFileSize(bytes: number) {
+  if (bytes < 1024) {
+    return `${bytes} B`;
+  }
+
+  if (bytes < 1024 * 1024) {
+    return `${(bytes / 1024).toFixed(0)} KB`;
+  }
+
+  return `${(bytes / 1024 / 1024).toFixed(1)} MB`;
+}
 
 export default function UploadModal({ onClose, refresh }: any) {
   const [caption, setCaption] = useState("");
-  const [file, setFile] = useState<any>(null);
+  const [file, setFile] = useState<File | null>(null);
   const [loading, setLoading] = useState(false);
+  const [compressionInfo, setCompressionInfo] = useState("");
 
   async function handleUpload() {
+    if (!isSupabaseConfigured) {
+      alert("Configure as variáveis NEXT_PUBLIC_SUPABASE_URL e NEXT_PUBLIC_SUPABASE_ANON_KEY na Vercel antes de publicar.");
+      return;
+    }
+
     setLoading(true);
 
     let imageUrl = "";
 
     if (file) {
-      const filename = `${Date.now()}-${file.name}`;
+      setCompressionInfo("Comprimindo imagem antes do envio...");
+      const uploadFile = await compressImage(file);
+      const filename = `${Date.now()}-${uploadFile.name}`;
+
+      if (uploadFile.size < file.size) {
+        setCompressionInfo(
+          `Imagem reduzida de ${formatFileSize(file.size)} para ${formatFileSize(uploadFile.size)}.`
+        );
+      }
 
       await supabase.storage
         .from("uploads")
-        .upload(filename, file);
+        .upload(filename, uploadFile, {
+          contentType: uploadFile.type || file.type,
+        });
 
       const { data } = supabase.storage
         .from("uploads")
@@ -51,9 +143,23 @@ export default function UploadModal({ onClose, refresh }: any) {
 
         <input
           type="file"
-          onChange={(e: any) => setFile(e.target.files[0])}
-          className="mb-6"
+          accept="image/*"
+          onChange={(e: ChangeEvent<HTMLInputElement>) => {
+            setFile(e.target.files?.[0] ?? null);
+            setCompressionInfo("");
+          }}
+          className="mb-3"
         />
+
+        <p className="mb-6 text-xs text-slate-400">
+          As imagens são comprimidas automaticamente antes do envio para reduzir bastante o peso do arquivo mantendo a visualização normal no mural.
+        </p>
+
+        {compressionInfo && (
+          <p className="mb-6 rounded-xl bg-slate-800 p-3 text-xs text-slate-300">
+            {compressionInfo}
+          </p>
+        )}
 
         <div className="flex gap-3">
           <button
