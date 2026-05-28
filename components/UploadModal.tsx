@@ -2,7 +2,7 @@
 "use client";
 
 import { useState } from "react";
-import { supabase } from "@/lib/supabase";
+import { isSupabaseConfigured, supabase } from "@/lib/supabase";
 
 export default function UploadModal({ onClose, refresh }: any) {
   const [caption, setCaption] = useState("");
@@ -10,6 +10,11 @@ export default function UploadModal({ onClose, refresh }: any) {
   const [loading, setLoading] = useState(false);
 
   async function handleUpload() {
+    if (!isSupabaseConfigured) {
+      alert("Configure as variáveis NEXT_PUBLIC_SUPABASE_URL e NEXT_PUBLIC_SUPABASE_ANON_KEY na Vercel antes de publicar.");
+      return;
+    }
+
     setLoading(true);
 
     let imageUrl = "";
