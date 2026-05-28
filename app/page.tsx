@@ -41,8 +41,8 @@ export default function Home() {
             <h1 className="bg-gradient-to-r from-white via-slate-200 to-slate-400 bg-clip-text text-4xl font-black tracking-tight text-transparent md:text-5xl">
               Mural Empresarial Extraordinário
             </h1>
-            <p className="mt-3 font-serif text-lg italic tracking-wide text-slate-300 md:text-xl">
-              Uma iniciativa PDL2026
+            <p className="mt-3 max-w-3xl font-serif text-lg italic leading-relaxed tracking-wide text-slate-300 md:text-xl">
+              Publique aqui sua Visão extraordinária empresarial com a WMC dentro dos próximos 3 a 5 anos.
             </p>
           </div>
 
