@@ -35,9 +35,9 @@ export default function Home() {
       <div className="max-w-7xl mx-auto">
         <div className="flex items-center justify-between mb-8">
           <div>
-            <h1 className="text-3xl font-bold">Painel Interno</h1>
+            <h1 className="text-3xl font-bold">Mural Empresarial Extraordinário</h1>
             <p className="text-slate-400 mt-1">
-              Feed anônimo da empresa
+              Uma iniciativa PDL2026
             </p>
           </div>
 
