@@ -3,7 +3,7 @@
 
 import { useEffect, useState } from "react";
 import { Plus } from "lucide-react";
-import { supabase } from "@/lib/supabase";
+import { isSupabaseConfigured, supabase } from "@/lib/supabase";
 import UploadModal from "@/components/UploadModal";
 import PostCard from "@/components/PostCard";
 
@@ -13,6 +13,11 @@ export default function Home() {
   const [columns, setColumns] = useState(3);
 
   async function loadPosts() {
+    if (!isSupabaseConfigured) {
+      setPosts([]);
+      return;
+    }
+
     const { data } = await supabase
       .from("posts")
       .select("*")
@@ -47,6 +52,12 @@ export default function Home() {
             <option value={4}>4 colunas</option>
           </select>
         </div>
+
+        {!isSupabaseConfigured && (
+          <div className="mb-6 rounded-2xl border border-amber-500/40 bg-amber-500/10 p-4 text-sm text-amber-100">
+            Configure NEXT_PUBLIC_SUPABASE_URL e NEXT_PUBLIC_SUPABASE_ANON_KEY na Vercel para carregar e publicar posts.
+          </div>
+        )}
 
         <div
           className="masonry"
