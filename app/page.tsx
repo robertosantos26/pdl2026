@@ -33,10 +33,15 @@ export default function Home() {
   return (
     <main className="min-h-screen p-6">
       <div className="max-w-7xl mx-auto">
-        <div className="flex items-center justify-between mb-8">
+        <div className="flex items-center justify-between mb-8 gap-6">
           <div>
-            <h1 className="text-3xl font-bold">Mural Empresarial Extraordinário</h1>
-            <p className="text-slate-400 mt-1">
+            <p className="mb-3 text-xs font-semibold uppercase tracking-[0.35em] text-slate-400">
+              PDL 2026
+            </p>
+            <h1 className="bg-gradient-to-r from-white via-slate-200 to-slate-400 bg-clip-text text-4xl font-black tracking-tight text-transparent md:text-5xl">
+              Mural Empresarial Extraordinário
+            </h1>
+            <p className="mt-3 font-serif text-lg italic tracking-wide text-slate-300 md:text-xl">
               Uma iniciativa PDL2026
             </p>
           </div>
