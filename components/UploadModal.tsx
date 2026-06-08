@@ -1,4 +1,3 @@
-
 "use client";
 
 import { ChangeEvent, useState } from "react";
@@ -20,10 +19,21 @@ function getCompressedDimensions(width: number, height: number, extraScale = 1) 
   };
 }
 
-function blobToFile(blob: Blob, originalName: string) {
-  const cleanName = originalName.replace(/\.[^/.]+$/, "");
+function sanitizeStorageName(fileName: string) {
+  const nameWithoutExtension = fileName.replace(/\.[^/.]+$/, "");
+  const normalizedName = nameWithoutExtension
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9-]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .slice(0, 80);
 
-  return new File([blob], `${cleanName}.webp`, {
+  return normalizedName || "imagem";
+}
+
+function blobToFile(blob: Blob, originalName: string) {
+  return new File([blob], `${sanitizeStorageName(originalName)}.webp`, {
     type: "image/webp",
     lastModified: Date.now(),
   });
@@ -101,6 +111,20 @@ function formatFileSize(bytes: number) {
   return `${(bytes / 1024 / 1024).toFixed(1)} MB`;
 }
 
+function getFileExtension(file: File) {
+  if (file.type === "image/webp") {
+    return "webp";
+  }
+
+  const extension = file.name.split(".").pop()?.toLowerCase().replace(/[^a-z0-9]/g, "");
+
+  return extension || "jpg";
+}
+
+function getStoragePath(file: File) {
+  return `${Date.now()}-${sanitizeStorageName(file.name)}.${getFileExtension(file)}`;
+}
+
 export default function UploadModal({ onClose, refresh }: any) {
   const [caption, setCaption] = useState("");
   const [file, setFile] = useState<File | null>(null);
@@ -115,39 +139,51 @@ export default function UploadModal({ onClose, refresh }: any) {
 
     setLoading(true);
 
-    let imageUrl = "";
+    try {
+      let imageUrl = "";
 
-    if (file) {
-      setCompressionInfo("Comprimindo imagem antes do envio...");
-      const uploadFile = await compressImage(file);
-      const filename = `${Date.now()}-${uploadFile.name}`;
+      if (file) {
+        setCompressionInfo("Comprimindo imagem antes do envio...");
+        const uploadFile = await compressImage(file);
+        const filename = getStoragePath(uploadFile);
 
-      if (uploadFile.size < file.size) {
-        setCompressionInfo(
-          `Imagem reduzida de ${formatFileSize(file.size)} para ${formatFileSize(uploadFile.size)}.`
-        );
+        if (uploadFile.size < file.size) {
+          setCompressionInfo(
+            `Imagem reduzida de ${formatFileSize(file.size)} para ${formatFileSize(uploadFile.size)}.`
+          );
+        }
+
+        const { error: uploadError } = await supabase.storage
+          .from("uploads")
+          .upload(filename, uploadFile, {
+            contentType: uploadFile.type || file.type,
+          });
+
+        if (uploadError) {
+          throw uploadError;
+        }
+
+        imageUrl = filename;
       }
 
-      await supabase.storage
-        .from("uploads")
-        .upload(filename, uploadFile, {
-          contentType: uploadFile.type || file.type,
-        });
+      const { error: postError } = await supabase.from("posts").insert({
+        image_url: imageUrl,
+        caption,
+      });
 
-      const { data } = supabase.storage
-        .from("uploads")
-        .getPublicUrl(filename);
+      if (postError) {
+        throw postError;
+      }
 
-      imageUrl = data.publicUrl;
+      refresh();
+      onClose();
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Erro desconhecido.";
+      alert(`Não foi possível publicar a imagem: ${message}`);
+      setCompressionInfo("");
+    } finally {
+      setLoading(false);
     }
-
-    await supabase.from("posts").insert({
-      image_url: imageUrl,
-      caption,
-    });
-
-    refresh();
-    onClose();
   }
 
   return (
@@ -193,7 +229,7 @@ export default function UploadModal({ onClose, refresh }: any) {
           <button
             onClick={handleUpload}
             disabled={loading}
-            className="flex-1 bg-white text-black rounded-2xl py-3 font-semibold"
+            className="flex-1 bg-white text-black rounded-2xl py-3 font-semibold disabled:cursor-not-allowed disabled:opacity-60"
           >
             {loading ? "Enviando..." : "Publicar"}
           </button>
