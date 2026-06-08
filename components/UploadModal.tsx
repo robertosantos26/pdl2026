@@ -163,11 +163,7 @@ export default function UploadModal({ onClose, refresh }: any) {
           throw uploadError;
         }
 
-        const { data } = supabase.storage
-          .from("uploads")
-          .getPublicUrl(filename);
-
-        imageUrl = data.publicUrl;
+        imageUrl = filename;
       }
 
       const { error: postError } = await supabase.from("posts").insert({
